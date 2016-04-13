@@ -15,22 +15,25 @@ CON
   LF              = 10
   SizeBUFFERXML   = 1500
 
-  
+OBJ
+
+  PC            : "Parallax Serial Terminal Extended"
+  XB            : "XBee_Object_1"           'XBee communication methods
+  STR           : "Strings2"
+  PSR           : "Parser"
+  gWeather[2]   : "Meteo_field"            ' 3 days of Weather's Data  to save
+    
 Var
   long stack[50]                ' stack space for second cog
   byte xmlBuffer[SizeBUFFERXML] ' xmldata
-  byte TMin[2]                  ' temperature Min
-  byte TMax[2]                  ' temperature Min
+  'byte TMin[2]                  ' temperature Min
+  'byte TMax[2]                  ' temperature Min
+  byte TMin                  ' temperature Min
+  byte TMax                  ' temperature Min
   byte TBuffer[2]               ' temperature buffer
   byte ConditionBuffer[100]     ' 
   
-OBJ
 
-  PC    : "Parallax Serial Terminal Extended"
-  XB    : "XBee_Object_1"                              ' XBee communication methods
-  STR   : "Strings2"
-  PSR   : "Parser"
-  
 PUB Start
 
   XB.Start(XB_Rx, XB_Tx, 0, XB_Baud)          ' Propeller Comms - RX,TX, Mode, Baud
@@ -56,23 +59,25 @@ PUB Start
 
 Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
 
-  i:=ParseXml_Temp (@xmltxt,string("low data="),@TMin[0])
+  i:=ParseXml_Temp (@xmltxt,string("low data="),@TMin)
 
   tmpBuffer := Str.substr(xmltxt,i,strsize(xmltxt)-i)
-  i:=ParseXml_Temp (tmpBuffer,string("high data="),@TMax[0])
+  i:=ParseXml_Temp (tmpBuffer,string("high data="),@TMax)
 
   tmpBuffer := Str.substr(tmpBuffer,i,strsize(xmltxt)-i)
-  i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
+ ' i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
   PC.str(string(CR,LF,"tmpBuffer_2= "))
   PC.str(tmpBuffer)
  
 
-
+  InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
+  
   ' pretty print data
-  PC.str(string(CR,LF,"Min="))
-  PC.dec (TMin[0])
-  PC.str(string(CR,LF,"Max="))
-  PC.dec (TMax[0])
+  PrintWeather (0)
+ ' PC.str(string(CR,LF,"Min="))
+  'PC.dec (TMin[0])
+  'PC.str(string(CR,LF,"Max="))
+  'PC.dec (TMax[0])
 
 {{       
 Pub XB_to_PC  | c, i,j, tmpBuffer,tmpBuffer1
@@ -169,16 +174,58 @@ output : 8 (decimal)
 
 
   repeat while index + i + 1 < j
-    TempBuf[index] := byte[tmpBuffer][index+i+1]
+    TBuffer[index] := byte[tmpBuffer][index+i+1]
     index++
-  TempBuf[index]:=0
+  TBuffer[index]:=0
   
    
-  byte[Tmprtr] := PSR.asc2val(@TempBuf)
+  byte[Tmprtr] := PSR.asc2val(@TBuffer)
 
 
-  return j+k    
+  return j+k
 
+PUB InsertWeather( pIndex, pDay, pTmin, pTmax, pStrConditionPtr, pStrIconPtr )
+{{
+DESCRIPTION: Inserts the sent record into the object storage array.   
+PARMS:       pIndex      - index of record to use.
+             pTmin                - Tempr Min 
+             pTmax                 
+             pHeight              - height in inches of person.
+             pStrConditionPtr     - pointer to Condition weather string
+             pStrIconPtr          - pointer to Icon string           
+RETURNS: nothing. 
+}}
+
+  gWeather[ pIndex ].Day_( pDay )
+  gWeather[ pIndex ].Tmin_( pTmin )
+  gWeather[ pIndex ].Tmax_( pTmax )
+  gWeather[ pIndex ].Condition_( pStrConditionPtr )  
+  gWeather[ pIndex ].Icon_( pStrIconPtr )
+  
+PUB PrintWeather( pIndex )
+{{
+DESCRIPTION: Prints the requested record to terminal.  
+PARMS: pIndex - index of record to pretty print to screen. 
+RETURNS: nothing. 
+}}
+
+
+  PC.str(string(CR,LF,"Day: "))
+  PC.str( gWeather[ pIndex ]._Day )
+
+  PC.str(string(CR,LF,"TMin: "))
+  PC.dec( gWeather[ pIndex ]._TMin )
+
+  PC.str(string(CR,LF,"TMax: "))
+  PC.dec( gWeather[ pIndex ]._TMax )
+
+  PC.str(string(CR,LF,"Condition: "))
+  PC.dec( gWeather[ pIndex ]._Condition )
+
+  PC.str(string(CR,LF,"Icon: "))
+  PC.dec( gWeather[ pIndex ]._Icon )
+
+    
 Dat
 
   xmltxt      byte  "<xml_api_reply version=",34,"1",34,">  <weather module_id=",34,"0",34," tab_id=",34,"0",34,">          <forecast_information>                  <!-- Some inner tags containing data about the city found, time and unit-stuff -->                      <city data=",34,"Paris, FR",34,"/>                      <postal_code data=",34,34,"/>                        <latitude_e6 data=",34,34,"/>                        <longitude_e6 data=",34,34,"/>                       <forecast_date data=",34,"2016-04-11",34,"/>                    <current_date_time data=",34,"2016-04-11 11:11:37 +0200",34,"/>                 <unit_system data=",34,"fr",34,"/>              </forecast_information>         <current_conditions>                    <!-- Some inner tags containing data of current weather -->                     <condition data=",34,"Risque de Pluie",34,"/>                   <temp_f data=",34,"52",34,"/>                   <temp_c data=",34,"11",34,"/>                   <humidity data=",34,"Humidité: 88%",34,"/>                      <icon data=",34,"/images/weather/chance_of_rain.gif",34,"/>                     <wind_condition data=",34,"Vent: SE de 7 km/h",34,"/>           </current_conditions><forecast_conditions>                      <!-- Some inner tags containing data about future weather -->                   <day_of_week data=",34,"Auj",34,"/>                     <low data=",34,"38",34,"/>                       <high data=",34,"14",34,"/>                     <icon data=",34,"/images/weather/mist.gif",34,"/>                       <condition data=",34,"Pluie Fine",34,"/>                        </forecast_conditions><forecast_conditions>                     <!-- Some inner tags containing data about future weather -->                   <day_of_week data=",34,"Mar",34,"/>                     <low data=",34,"6",34,"/>                       <high data=",34,"14",34,"/>                     <icon data=",34,"/images/weather/mist.gif",34,"/>                       <condition data=",34,"Pluie Fine",34,"/>                        </forecast_conditions><forecast_conditions>                     <!-- Some inner tags containing data about future weather -->                   <day_of_week data=",34,"Mer",34,"/>                     <low data=",34,"8",34,"/>                       <high data=",34,"16",34,"/>                     <icon data=",34,"/images/weather/mist.gif",34,"/>                       <condition data=",34,"Pluie Fine",34,"/>                        </forecast_conditions><forecast_conditions>                     <!-- Some inner tags containing data about future weather -->                   <day_of_week data=",34,"Jeu",34,"/>                     <low data=",34,"7",34,"/>                       <high data=",34,"14",34,"/>                     <icon data=",34,"/images/weather/rain.gif",34,"/>                       <condition data=",34,"Pluie",34,"/>                     </forecast_conditions></weather></xml_api_reply>",0     
