@@ -21,7 +21,8 @@ Var
   byte xmlBuffer[SizeBUFFERXML] ' xmldata
   byte TMin[2]                  ' temperature Min
   byte TMax[2]                  ' temperature Min
-  byte txtTst[2]                ' texte a changer
+  byte TBuffer[2]               ' temperature buffer
+  byte ConditionBuffer[100]     ' 
   
 OBJ
 
@@ -58,11 +59,10 @@ Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
   i:=ParseXml_Temp (@xmltxt,string("low data="),@TMin[0])
 
   tmpBuffer := Str.substr(xmltxt,i,strsize(xmltxt)-i)
- ' PC.str(string(CR,LF,"tmpBuffer= "))
-  'PC.str(tmpBuffer)
-
   i:=ParseXml_Temp (tmpBuffer,string("high data="),@TMax[0])
+
   tmpBuffer := Str.substr(tmpBuffer,i,strsize(xmltxt)-i)
+  i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
   PC.str(string(CR,LF,"tmpBuffer_2= "))
   PC.str(tmpBuffer)
  
@@ -113,7 +113,32 @@ Pub XB_to_PC  | c, i,j, tmpBuffer,tmpBuffer1
   PC.str(string(CR,LF,"Max="))
   PC.dec (TMax[0])
 }}
-Pub ParseXml_Temp (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,Temperature[2], tmpBuffer
+Pub ParseXml_Temp (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,tmpBuffer
+{{
+Exemple
+xmbuffer = "<test> <low data="8"> </test>"
+ParseXml_Temp (xmlbuffer,"low data=")
+output : 8 (decimal)
+}}
+
+  ' init
+  k:=  STR.strpos(xmlTmpBuffer,strField,0)  ' index of field
+  tmpBuffer:=STR.StrStr(xmlTmpBuffer,strField,0)   'cut the beginning of the string
+
+  ' search for field
+  i := STR.strpos(tmpBuffer,string(34),0)
+  j := STR.strpos(tmpBuffer,string(34),i+1)
+  index := 0
+  repeat while index + i + 1 < j
+    TBuffer[index] := byte[tmpBuffer][index+i+1]
+    index++
+  TBuffer[index]:=0
+  
+  ' return the temperature 
+  byte[Tmprtr] := PSR.asc2val(@TBuffer)           
+  return j+k                                      ' use to position for the next field    
+
+Pub ParseXml_Condition (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,Temperature[2], tmpBuffer
 {{
 Exemple
 xmbuffer = "<test> <low data="8"> </test>"
@@ -144,33 +169,15 @@ output : 8 (decimal)
 
 
   repeat while index + i + 1 < j
-    Temperature[index] := byte[tmpBuffer][index+i+1]
+    TempBuf[index] := byte[tmpBuffer][index+i+1]
     index++
-  Temperature[index]:=0
+  TempBuf[index]:=0
   
-  index:=0
-  repeat while index<3
-    PC.str(string(CR,LF,"Temperature["))
-    PC.dec(index)
-    PC.str(string("]="))
-    PC.dec(Temperature[index])
-    index++
-
-  'PC.str(string(CR,LF,"Temperature = "))
-  'PC.str(@Temperature)
-  'PC.str(PSR.asc2val(@Temperature))
-  'txtTst:= string("14")
-  'PC.char(txtTst)
    
-  byte[Tmprtr] := PSR.asc2val(@Temperature)
-'  PC.str(string(CR,LF,"tmpxml_2= "))
- ' PC.str(xmlTmpBuffer)
- ' PC.str(string(CR,LF,"field_2= "))
- ' PC.str(strField)
+  byte[Tmprtr] := PSR.asc2val(@TempBuf)
+
 
   return j+k    
-  'return  PSR.asc2val(@Temperature)
-
 
 Dat
 
