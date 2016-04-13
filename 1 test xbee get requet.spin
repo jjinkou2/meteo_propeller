@@ -55,7 +55,7 @@ PUB Start
   'PC.str(string(CR,LF))
 
   ParseXml
-
+  PrintWeather (0)
 
 Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
 
@@ -65,15 +65,16 @@ Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
   i:=ParseXml_Temp (tmpBuffer,string("high data="),@TMax)
 
   tmpBuffer := Str.substr(tmpBuffer,i,strsize(xmltxt)-i)
- ' i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
+  'i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
   PC.str(string(CR,LF,"tmpBuffer_2= "))
   PC.str(tmpBuffer)
  
+  InsertWeather (0,string ("Auj"),10, 32, string("Condition bonne"),string("Wind.gif"))
 
-  InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
+  'InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
   
   ' pretty print data
-  PrintWeather (0)
+
  ' PC.str(string(CR,LF,"Min="))
   'PC.dec (TMin[0])
   'PC.str(string(CR,LF,"Max="))
@@ -127,8 +128,8 @@ output : 8 (decimal)
 }}
 
   ' init
-  k:=  STR.strpos(xmlTmpBuffer,strField,0)  ' index of field
-  tmpBuffer:=STR.StrStr(xmlTmpBuffer,strField,0)   'cut the beginning of the string
+  k := STR.strpos(xmlTmpBuffer,strField,0)  ' index of field
+  tmpBuffer := STR.StrStr(xmlTmpBuffer,strField,0)   'cut the beginning of the string
 
   ' search for field
   i := STR.strpos(tmpBuffer,string(34),0)
@@ -187,7 +188,7 @@ output : 8 (decimal)
 PUB InsertWeather( pIndex, pDay, pTmin, pTmax, pStrConditionPtr, pStrIconPtr )
 {{
 DESCRIPTION: Inserts the sent record into the object storage array.   
-PARMS:       pIndex      - index of record to use.
+PARMS:       pIndex               - index of record to use.
              pTmin                - Tempr Min 
              pTmax                 
              pHeight              - height in inches of person.
@@ -213,16 +214,16 @@ RETURNS: nothing.
   PC.str(string(CR,LF,"Day: "))
   PC.str( gWeather[ pIndex ]._Day )
 
-  PC.str(string(CR,LF,"TMin: "))
+  PC.str(string("TMin: "))
   PC.dec( gWeather[ pIndex ]._TMin )
 
-  PC.str(string(CR,LF,"TMax: "))
+  PC.str(string("TMax: "))
   PC.dec( gWeather[ pIndex ]._TMax )
 
-  PC.str(string(CR,LF,"Condition: "))
+  PC.str(string("Condition: "))
   PC.dec( gWeather[ pIndex ]._Condition )
 
-  PC.str(string(CR,LF,"Icon: "))
+  PC.str(string("Icon: "))
   PC.dec( gWeather[ pIndex ]._Icon )
 
     
