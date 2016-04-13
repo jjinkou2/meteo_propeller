@@ -21,7 +21,7 @@ Var
   byte xmlBuffer[SizeBUFFERXML] ' xmldata
   byte TMin[2]                  ' temperature Min
   byte TMax[2]                  ' temperature Min
-  byte txtTst[2]
+  byte txtTst[2]                ' texte a changer
   
 OBJ
 
