@@ -31,17 +31,17 @@ Var
   byte TMin                  ' temperature Min
   byte TMax                  ' temperature Min
   byte TBuffer[2]               ' temperature buffer
-  byte ConditionBuffer[100]     ' 
-  
+  byte ConditionBuffer[gWeather#MAX_Condition_LENGTH]     ' 
+
 
 PUB Start
 
   XB.Start(XB_Rx, XB_Tx, 0, XB_Baud)          ' Propeller Comms - RX,TX, Mode, Baud
   XB.Delay(1000)                              ' One second delay
   PC.Start(PC_Baud)                           ' Start Parallax Serial Terminal
-  PC.clear
+  PC.Clear
   
-  bytefill(@xmlBuffer, 0, SizeBUFFERXML)          ' Clear Buff to 0
+  'bytefill(@xmlBuffer, 0, SizeBUFFERXML)          ' Clear Buff to 0
   'bytefill(@tmpBuffer, 0, SizeBUFFERXML)          ' Clear Buff to 0
 
   'cognew(XB_to_PC,@stack)       ' Start cog for XBee--> PC comms
@@ -55,7 +55,7 @@ PUB Start
   'PC.str(string(CR,LF))
 
   ParseXml
-  PrintWeather (0)
+  PrintWeather(0)
 
 Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
 
@@ -64,21 +64,23 @@ Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
   tmpBuffer := Str.substr(xmltxt,i,strsize(xmltxt)-i)
   i:=ParseXml_Temp (tmpBuffer,string("high data="),@TMax)
 
+{{  PC.Newline
+  PC.str(string("tmpBuffer_1= "))
+  PC.str(tmpBuffer)
+ }} 
   tmpBuffer := Str.substr(tmpBuffer,i,strsize(xmltxt)-i)
   'i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
-  PC.str(string(CR,LF,"tmpBuffer_2= "))
-  PC.str(tmpBuffer)
+
+  PC.Newline
+  'PC.str(string("tmpBuffer_2= "))
+  'PC.str(tmpBuffer)
+ ' PC.Newline
+  'PC.dec(TMin) 
+
+  'InsertWeather (0,string ("Auj"),10, 32, string("Condition bonne"),string("Wind.gif"))
+
+  InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
  
-  InsertWeather (0,string ("Auj"),10, 32, string("Condition bonne"),string("Wind.gif"))
-
-  'InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
-  
-  ' pretty print data
-
- ' PC.str(string(CR,LF,"Min="))
-  'PC.dec (TMin[0])
-  'PC.str(string(CR,LF,"Max="))
-  'PC.dec (TMax[0])
 
 {{       
 Pub XB_to_PC  | c, i,j, tmpBuffer,tmpBuffer1
@@ -123,8 +125,8 @@ Pub ParseXml_Temp (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,tmpBuffer
 {{
 Exemple
 xmbuffer = "<test> <low data="8"> </test>"
-ParseXml_Temp (xmlbuffer,"low data=")
-output : 8 (decimal)
+ParseXml_Temp (xmlbuffer,"low data=",@t)
+output : t:=8 (decimal) and index of field
 }}
 
   ' init
@@ -142,7 +144,7 @@ output : 8 (decimal)
   
   ' return the temperature 
   byte[Tmprtr] := PSR.asc2val(@TBuffer)           
-  return j+k                                      ' use to position for the next field    
+  return j+k                                      ' used to position for the next field    
 
 Pub ParseXml_Condition (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,Temperature[2], tmpBuffer
 {{
@@ -211,20 +213,25 @@ RETURNS: nothing.
 }}
 
 
-  PC.str(string(CR,LF,"Day: "))
+  PC.Newline
+  PC.str(string("Day: "))
   PC.str( gWeather[ pIndex ]._Day )
 
+  PC.str(string(CR))
   PC.str(string("TMin: "))
   PC.dec( gWeather[ pIndex ]._TMin )
 
+  PC.str(string(CR))
   PC.str(string("TMax: "))
   PC.dec( gWeather[ pIndex ]._TMax )
 
+  PC.str(string(CR))
   PC.str(string("Condition: "))
-  PC.dec( gWeather[ pIndex ]._Condition )
+  PC.str( gWeather[ pIndex ]._Condition )
 
+  PC.str(string(CR))
   PC.str(string("Icon: "))
-  PC.dec( gWeather[ pIndex ]._Icon )
+  PC.str( gWeather[ pIndex ]._Icon )
 
     
 Dat
