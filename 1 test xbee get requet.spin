@@ -26,13 +26,14 @@ OBJ
 Var
   long stack[50]                ' stack space for second cog
   byte xmlBuffer[SizeBUFFERXML] ' xmldata
+  byte tmpXmlBuffer[SizeBUFFERXML] ' xmldata to work with
   'byte TMin[2]                  ' temperature Min
   'byte TMax[2]                  ' temperature Min
   byte TMin                  ' temperature Min
   byte TMax                  ' temperature Min
   byte TBuffer[2]               ' temperature buffer
   byte ConditionBuffer[gWeather#MAX_Condition_LENGTH]     ' 
-
+  byte NextFieldIdx             ' Position of the next field 
 
 PUB Start
 
@@ -55,9 +56,9 @@ PUB Start
   'PC.str(string(CR,LF))
 
   ParseXml
-  PrintWeather(0)
+  'PrintWeather(0)
 
-Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
+Pub ParseXml | i, tmpBuffer, pStrTxtVal ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
 
   i:=ParseXml_Temp (@xmltxt,string("low data="),@TMin)
 
@@ -67,9 +68,10 @@ Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
 {{  PC.Newline
   PC.str(string("tmpBuffer_1= "))
   PC.str(tmpBuffer)
- }} 
-  tmpBuffer := Str.substr(tmpBuffer,i,strsize(xmltxt)-i)
-  'i:=ParseXml_Icon (tmpBuffer,string("icon data="),@TMax[0])
+ }}
+  
+  tmpBuffer  := Str.substr(tmpBuffer,i,strsize(xmltxt)-i)
+  pStrTxtVal := ParseXml_strTxt (tmpBuffer,string("condition data="),@NextFieldIdx)
 
   PC.Newline
   'PC.str(string("tmpBuffer_2= "))
@@ -77,9 +79,8 @@ Pub ParseXml | i, tmpBuffer ',j,index,Temperature[2], tmpBuffer,tmpBuffer1
  ' PC.Newline
   'PC.dec(TMin) 
 
-  'InsertWeather (0,string ("Auj"),10, 32, string("Condition bonne"),string("Wind.gif"))
 
-  InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
+  'InsertWeather (0,string ("Auj"),TMin, TMax, string("Condition bonne"),string("Wind.gif"))
  
 
 {{       
@@ -130,8 +131,8 @@ output : t:=8 (decimal) and index of field
 }}
 
   ' init
-  k := STR.strpos(xmlTmpBuffer,strField,0)  ' index of field
-  tmpBuffer := STR.StrStr(xmlTmpBuffer,strField,0)   'cut the beginning of the string
+  k := STR.strpos(xmlTmpBuffer,strField,0)              ' index of field
+  tmpBuffer := STR.StrStr(xmlTmpBuffer,strField,0)      ' cut the beginning of the string
 
   ' search for field
   i := STR.strpos(tmpBuffer,string(34),0)
@@ -146,46 +147,72 @@ output : t:=8 (decimal) and index of field
   byte[Tmprtr] := PSR.asc2val(@TBuffer)           
   return j+k                                      ' used to position for the next field    
 
-Pub ParseXml_Condition (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,Temperature[2], tmpBuffer
+Pub ParseXml_strTxt (xmlTmpBuffer,strField,pNxtIdx):pStringPtr | i,j,k,index
 {{
+Return a string
+PARAM:
+  - xmlTmpBuffer                buffer xml to look into
+  - strField                    field to look at
+  - pNxtIdx                     index  to be used  for the next query 
 Exemple
-xmbuffer = "<test> <low data="8"> </test>"
-ParseXml_Temp (xmlbuffer,"low data=")
-output : 8 (decimal)
+    xmbuffer = "<test> <low data="8"> </test>"
+    Texte:= ParseXml_Temp (xmlbuffer,"low data=",@i)
+  output : Texte = "8"
+  i = 20
 }}
 
-  PC.str(string(CR,LF,"tmpxml= "))
-  PC.str(xmlTmpBuffer)
+  'PC.str(string(CR,LF,"tmpxml= "))
+  'PC.str(xmlTmpBuffer)
 
   k:=  STR.strpos(xmlTmpBuffer,strField,0)
   
-  tmpBuffer:=STR.StrStr(xmlTmpBuffer,strField,0)
+  tmpXmlBuffer:=STR.StrStr(xmlTmpBuffer,strField,0)
 
-  PC.str(string(CR,LF,"tmpBuf= "))
-  PC.str(tmpBuffer)
+  PC.str(string(CR,LF,"tmpBuf = "))
+  PC.str(tmpXmlBuffer)
    
-  PC.str(string(CR,LF,"field= "))
-  PC.str(strField)
+  'PC.str(string(CR,LF,"field = "))
+  'PC.str(strField)
 
-  i := STR.strpos(tmpBuffer,string(34),0)
-  j := STR.strpos(tmpBuffer,string(34),i+1)
+  i := STR.strpos(tmpXmlBuffer,string(34),0)
+  j := STR.strpos(tmpXmlBuffer,string(34),i+1)
   index := 0
   PC.str(string(CR,LF,"i="))
-  PC.dec (i)
+  PC.dec(i)
   PC.str(string(CR,LF,"j="))
-  PC.dec (j)
+  PC.dec(j)
 
-
-  repeat while index + i + 1 < j
-    TBuffer[index] := byte[tmpBuffer][index+i+1]
+  repeat while (index + i + 1) < j
+    pStringPtr[index] := byte[tmpXmlBuffer][index+i+1]
     index++
-  TBuffer[index]:=0
+  pStringPtr[index]:=0
+
+
+  PC.Newline
+  index := 0
+  PC.str(string(CR,LF,"i="))
+  PC.dec(i)
+  PC.str(string(CR,LF,"j="))
+  PC.dec(j)
+  repeat while index + i + 1 < j
+    PC.str(string("pStringPtr["))
+    PC.dec(index)
+    PC.str(string("] = "))
+    PC.char(pStringPtr[index])
+    index++
+ 
+  PC.Newline
+  'PC.str(string("pStringPtr = "))
+  'PC.str(@pStringPtr)   
+  byte[pNxtIdx] := j+k
+
+
+
+ ' PC.Newline
+  'PC.str(string("pNxtIdx = "))
+  'PC.dec(pNxtIdx)
   
-   
-  byte[Tmprtr] := PSR.asc2val(@TBuffer)
-
-
-  return j+k
+  return pStringPtr
 
 PUB InsertWeather( pIndex, pDay, pTmin, pTmax, pStrConditionPtr, pStrIconPtr )
 {{
