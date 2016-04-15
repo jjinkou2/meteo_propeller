@@ -4,15 +4,14 @@ CON
 ' -----------------------------------------------------------------------------
 
   ' string processing constants
-  MAX_Condition_LENGTH  = 30 ' max length of a condition' text, 99 plus a NULL
-  MAX_IconName_LENGTH   = 20
+  MAX_Str_LENGTH  = 100 ' max length of a condition' text, 99 plus a NULL
   
 VAR
   byte Day[4]                   '    
   byte Tmin                  ' temperature Min
   byte Tmax                  ' temperature Max
-  byte Condition[MAX_Condition_LENGTH]
-  byte Icon[MAX_IconName_LENGTH]
+  byte Condition[MAX_Str_LENGTH]
+  byte Icon[MAX_Str_LENGTH]
    
 
 
@@ -41,10 +40,10 @@ CON
 ' -----------------------------------------------------------------------------
 
 PUB Day_( pStrPtr )
-  'if   strsize( pStrPtr ) + 1 =<  3
+  if   strsize( pStrPtr ) + 1 =<  4
     bytemove( @Day, pStrPtr, strsize( pStrPtr ) + 1)
-  'else
-  '  bytemove( @Day, pStrPtr, 3)
+  else
+    bytemove( @Day, pStrPtr, 4)
 
 PUB Tmin_( pTmin )
   Tmin := pTmin
@@ -54,15 +53,15 @@ PUB Tmax_( pTmax )
   
 PUB Condition_( pStrPtr )
 
-  'if   strsize( pStrPtr ) + 1 <  MAX_Condition_LENGTH
+  if   strsize( pStrPtr ) + 1 <  MAX_Str_LENGTH
     bytemove( @Condition, pStrPtr, strsize( pStrPtr ) + 1)
-  'else
-   ' bytemove( @Condition, pStrPtr, MAX_Condition_LENGTH)
+  else
+    bytemove( @Condition, pStrPtr, MAX_Str_LENGTH)
   
   
 
 PUB Icon_( pStrPtr )
-  'if   strsize( pStrPtr ) + 1 <  MAX_IconName_LENGTH
+  if   strsize( pStrPtr ) + 1 <  MAX_Str_LENGTH
     bytemove( @Icon, pStrPtr, strsize( pStrPtr ) + 1)
-  'else
-   ' bytemove( @Icon, pStrPtr, MAX_IconName_LENGTH)
+  else
+    bytemove( @Icon, pStrPtr, MAX_Str_LENGTH)
