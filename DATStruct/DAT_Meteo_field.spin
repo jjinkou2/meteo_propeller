@@ -29,8 +29,12 @@ VAR
   byte Condition[MAX_Str_LENGTH] 'string array
   byte Icon[MAX_Str_LENGTH]
 
-' table of forecast weather
-  long fcw[NbDays*weatherParamCount]
+' DayWeather ptr
+  long DayWeather
+  long Demain
+
+' Table of forecast weather
+  long fcw[NbDays]
 
 DAT
   weatherparams     long    10  ' Tmin
@@ -39,17 +43,47 @@ DAT
                     long    0   ' Condition
                     long    0   ' Icon
 PUB Main
+
+   PC.Start(115_200)                           ' Start Parallax Serial Terminal
+   PC.clear
+
+   {  ' waitcnt(clkfreq *2 + cnt)      ' attente pour appui sur enable a enlever au finish
+
+    PC.Str(string(CR))
+    PC.str(string("Weather test"))
     Init
     PrintDayWeather
+
+    PC.Str(string(CR,CR))
+    PC.str(string("2nd test"))
+}
+
     InsertDayRec(@DayWeather,12,40,string ("Auj"), string("Conditions bonnes"),string("Wind.gif"))
-    InsertWeaRec(0,@fcw,DayWeather)
-    PrintForecastWeather(0)
+    'InsertWeaRec(0,fcw,DayWeather)
+
+    InsertDayRec(@Demain,5,10,string ("Dem"), string("Conditions pluvieuses"),string("Rain.gif"))
+    'InsertWeaRec(1,fcw,Demain)
+
+    Print_ptrDayWeather(DayWeather)
+    Print_ptrDayWeather(Demain)
+
+'    Print_ptrDayWeather(DayWeather)
+{    InsertDayRec(long[fcw][0],12,40,string ("Auj"), string("Conditions bonnes"),string("Wind.gif"))
+    PC.str(string(CR,CR, "Forecast weather",CR))
+    Print_ptrDayWeather(fcw[0])
+}
+'    PC.str(string(CR,CR))
+ '   Print_ptrDayWeather(fcw[1])
+    'PrintForecastWeather(0)
 
 PUB Init
-    longmove(@We_Tmin,@weatherparams,weatherParamCount) 'init structure
-    We_Day       := @day
+    longmove(@We_Tmin,@weatherparams,weatherParamCount) ' init structure
+    We_Day       := string("Dam")                       ' 1st possibility
+    bytemove(@Condition,string("Bonne"),6)              ' 2nd possibility
+    bytemove(@Icon,string("toto"),5)
     We_Condition := @Condition
     We_Icon      := @Icon
+
 
 PUB InsertDayRec(ptrDayWeather, Tmin, Tmax,ptrDay,ptrCondition,ptrIcon)
     We_Tmin      := Tmin
@@ -57,7 +91,8 @@ PUB InsertDayRec(ptrDayWeather, Tmin, Tmax,ptrDay,ptrCondition,ptrIcon)
     We_Day       := ptrDay
     We_Condition := ptrCondition
     We_Icon      := ptrIcon
-    longmove(ptrDayWeather,@We_Tmin,weatherParamCount)
+    'long[ptrDayWeather] := @We_Tmin
+    longmove(long[ptrDayWeather],@We_Tmin,weatherParamCount)
 
 
 PUB InsertWeaRec(Index,ptrDestFcWeather, ptrFromDayWeather):okay
@@ -65,27 +100,49 @@ PUB InsertWeaRec(Index,ptrDestFcWeather, ptrFromDayWeather):okay
         return -1
     else
         'longmove(@We_Tmin,ptrFromDayWeather,weatherParamCount)
-        long[ptrDestFcWeather][Index] := ptrFromDayWeather
+        ptrDestFcWeather[Index] := ptrFromDayWeather
         return 0
 
 PUB PrintDayWeather
     PC.str(string(CR))
     PC.str(string("Day: "))
-    PC.str( gWeather[ pIndex ]._Day )
+    PC.str( We_Day )
 
     PC.str(string(CR))
     PC.str(string("TMin: "))
-    PC.dec( gWeather[ pIndex ]._TMin )
+    PC.dec( We_Tmin )
 
     PC.str(string(CR))
     PC.str(string("TMax: "))
-    PC.dec( gWeather[ pIndex ]._TMax )
+    PC.dec( We_Tmax )
 
     PC.str(string(CR))
     PC.str(string("Condition: "))
-    PC.str( gWeather[ pIndex ]._Condition )
+    PC.str( We_Condition )
 
     PC.str(string(CR))
     PC.str(string("Icon: "))
-    PC.str( gWeather[ pIndex ]._Icon )
+    PC.str( We_Icon )
+
+PUB Print_ptrDayWeather (ptrDayWeather)
+    PC.str(string(CR,CR))
+    PC.str(string("Day: "))
+    PC.str( long[ptrDayWeather][2] )
+
+    PC.str(string(CR))
+    PC.str(string("Tmin: "))
+    PC.dec( long[ptrDayWeather][0] )
+
+    PC.str(string(CR))
+    PC.str(string("TMax: "))
+    PC.dec( long[ptrDayWeather][1] )
+
+    PC.str(string(CR))
+    PC.str(string("Condition: "))
+    PC.str( long[ptrDayWeather][3] )
+
+    PC.str(string(CR))
+    PC.str(string("Icon: "))
+    PC.str( long[ptrDayWeather][4] )
+
 

@@ -1,0 +1,16 @@
+[Iamabstprojectfile]
+Iamthemagicnumber=1
+
+[Main]
+SelectedTab=0
+NumSubs=2
+OverrideOptimisation=0
+OptimiseFlags=0
+
+[File1]
+FileName=C:\Users\lyup7323\Documents\PropellerOmnia\DataStruc\DAT_Meteo_field.spin
+TopLine=1
+
+[File2]
+FileName=C:\Users\lyup7323\Documents\PropellerOmnia\DataStruc\DAT_usemeteofield.spin
+TopLine=1

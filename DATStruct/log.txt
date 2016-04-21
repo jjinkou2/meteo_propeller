@@ -1,0 +1,21 @@
+Day: Dem
+
+Tmin: 5
+
+TMax: 10
+
+Condition: Conditions pluvieuses
+
+Icon: Rain.gif
+
+
+
+Day: Dem
+
+Tmin: 5
+
+TMax: 10
+
+Condition: Conditions pluvieuses
+
+Icon: Rain.gif
