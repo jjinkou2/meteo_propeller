@@ -1,291 +1,220 @@
-'' =================================================================================================
-''  library for parsing value
-'' =================================================================================================
+{{
+************************
+* XML Get Attrib v0.1
+************************
+* Created by Laurent Pose
+* Created 28/04/2016 (April 28, 2016)
+* See end of file for terms of use.
+************************
+*
 
-  SizeBUFFERXML   = 1500
+* v0.1  - 15/04/15 - Creation
+************************
+
+┌---------------------------------------------------------------------------------------------------┐
+| This Obj finds XML attributes and put them into a list of string                                  |
+| suppose you have an xml text that provides informations inside attributes like                    |
+|                                                                                                   |
+|                 <test>                                                                            |
+|                    <Day data="Auj">                                                               |
+|                    <Day data="Tom">                                                               |
+|                 </test>"                                                                          |
+|                                                                                                   |
+|  GetXMLATTRIBs will extract all attributes values. Results are stored into an array of strings.   |
+|                                                                                                   |
+|  Days  = "Auj\0Tom\0"                                                                             |
+|                                                                                                   |
+└---------------------------------------------------------------------------------------------------┘
+
+           ┌--> get starting position
+┌───────-┐ │                                                                    ┌---> Days
+│ xmltxt │-┘                                                                   │
+└──────-─┘ │                     ┌--store in global value--┐  dispatch function │
+           └--> ParseXMLTxt ---> |     Values_Array        │--------------------┼---> Conditions
+                                 └-------------------------┘   GetXMLAttribs    │
+                                                                                │
+                                                                                └---> Icons
+
+NOTE: This file uses a modified version of OBJ string. I added a string copy function
+
+}}
+
+CON
+  LENSTRING       = 80                          ' Max lenght for each extracted value
+  NBVALUE         = 3                           ' Look for only 3 values
+  LENDAY          = 4
+
+VAR
+
+  byte Values_Array[NBVALUE*LENSTRING]           ' stores NBVALUE values string
+
+  byte TMin[NBVALUE*3]                           ' stores temperature in string
+  byte TMax[NBVALUE*3]
+  byte Days[NBVALUE*LENDAY]
+  byte Conditions[NBVALUE*LENSTRING]
+  byte Icons[NBVALUE*LENSTRING]
 
 OBJ
-
-  PC            : "Parallax Serial Terminal Extended"
   STR           : "Strings2.2"
 
-con
-'' Digit conversion
-'' =================================================================================================
-
-pub ucase(c) 
-
-'' Convert c to uppercase
-'' -- does not modify non-alphas
-
-  if ((c => "a") and (c =< "z"))
-    c -= 32
-
-  return c
-  
-pub asc2val(pntr) | c
-
-'' Returns value of numeric string
-'' -- binary (%) and hex ($) must be indicated
-
-  repeat
-    c := byte[pntr]
-    case c 
-      " ":                                                      ' skip leading space(s)    
-        pntr++
-
-      "-", "0".."9":                                            ' found decimal value
-        return asc2dec(pntr, 11)
-
-      "%":                                                      ' found binary value
-        return bin2dec(pntr, 32)
-
-      "$":                                                      ' found hex value
-        return hex2dec(pntr, 8)
-      
-      other:                                                    ' abort on bad character
-        return 0
-
-
-pub asc2dec(spntr, n) | c, value, sign
-
-'' Returns signed value from decimal string
-'' -- pntr is pointer to decimal string
-'' -- n is maximum number of digits to process
-
-  if (n < 1)                                                    ' if bogus, bail out
-    return 0
- 
-  repeat
-    c := byte[spntr]
-    case c 
-      " ":                                                      ' skip leading space(s)
-        spntr++
-
-      "-", "0".."9":                                            ' found value
-        if (c == "-")                                           ' sign symbol?
-          sign := -1                                            '  yes, set sign
-          spntr++                                               '  advance pointer
-        else
-          sign := 1                                             ' value is positive
-        quit
-
-      other:                                                    ' abort on bad character
-        return 0
-        
-  value := 0
-
-  n <#= 10                                                      ' limit chars in value  
-
-  repeat while (n)
-    c := byte[spntr++]                                          
-    case c
-      "0".."9":                                                 ' digit?
-        value := (value * 10) + (c - "0")                       '  update value
-        n--                                                     '  dec digits count
-
-      "_":
-        ' skip
-
-      other:
-        quit
-
-  return sign * value     
-  
-
-pub bin2dec(spntr, n) | c, value
-
-'' Returns value from {indicated} binary string
-'' -- pntr is pointer to binary string
-'' -- n is maximum number of digits to process
-
-  if (n < 1)                                                    ' if bogus, bail out
-    return 0
- 
-  repeat
-    c := byte[spntr]
-    case c 
-      " ":                                                      ' skip leading space(s) 
-        spntr++
-
-      "%":                                                      ' found indicator
-        spntr++                                                 '  move to value
-        quit      
-
-      "0".."1":                                                 ' found value
-        quit
-
-      other:                                                    ' abort on bad character
-        return 0
-
-  value := 0
-
-  n <#= 32                                                      ' limit chars in value
-
-  repeat while (n)                                                                      
-    c := byte[spntr++]                                          ' get next character
-    case c
-      "0".."1":                                                 ' binary digit?
-        value := (value << 1) | (c - "0")                       '  update value
-        --n                                                     '  dec digits count
-
-      "_":
-        ' skip
-
-      other:
-        quit
-    
-  return value
-
-
-pub hex2dec(pntr, n) | c, value
-
-'' Returns value from {indicated} hex string
-'' -- pntr is pointer to binary string
-'' -- n is maximum number of digits to process
-
-  if (n < 1)                                                    ' if bogus, bail out
-    return 0
- 
-  repeat
-    c := ucase(byte[pntr])
-    case c 
-      " ":                                                      ' skip leading space(s)
-        pntr++
-
-      "$":                                                      ' found indicator
-        pntr++                                                  '  move to value
-        quit  
-
-      "0".."9", "A".."F":                                       ' found value
-        quit
- 
-      other:                                                    ' abort on bad character
-        return 0
-
-  value := 0
-
-  n <#= 8                                                       ' limit field width
-
-  repeat while (n)
-    c := ucase(byte[pntr++])
-    case c
-      "0".."9":                                                 ' digit?
-        value := (value << 4) | (c - "0")                       '  update value
-        --n                                                     '  dec digits count
-
-      "A".."F":                                                 ' hex digit?
-        value := (value << 4) | (c - "A" + 10) 
-        --n
-
-      "_":
-        ' skip
-
-      other:
-        quit 
-
-  return value
-  
-Con
-'' XML Parser
-'' =================================================================================================
-
-Pub ParseXml () | i, tmpBuffer, pStrTxtVal 
-
-  i:=ParseXml_Temp (@xmltxt,string("low data="),@TMin)
-
-  tmpBuffer := Str.substr(xmltxt,i,strsize(xmltxt)-i)
-  i:=ParseXml_Temp (tmpBuffer,string("high data="),@TMax)
-
-{{  PC.Newline
-  PC.str(string("tmpBuffer_1= "))
-  PC.str(tmpBuffer)
- }}
-  
-  'tmpBuffer  := Str.substr(tmpBuffer,i,strsize(tmpBuffer)-i)
-  'IconBuffer := ParseXml_strTxt (tmpBuffer,string("icon data="),@NextFieldIdx)
-
-  tmpBuffer  := Str.substr(tmpBuffer,i,strsize(tmpBuffer)-i)
-  ConditionBuffer := ParseXml_strTxt (tmpBuffer,string("condition data="),@NextFieldIdx)
-  
-  
-  PC.Newline
-  PC.str(string("pStringPtr = "))
-  PC.str(@ConditionBuffer)  
-  PC.Newline
-  PC.str(string("NextFieldIdx = "))
-  PC.dec(NextFieldIdx)  
-  PC.Newline
-  'PC.str(string("tmpBuffer_2= "))
-  'PC.str(tmpBuffer)
- ' PC.Newline
-  'PC.dec(TMin)
-  
-Pub ParseXml_Temp (xmlTmpBuffer,strField,Tmprtr) | i,j,k,index,tmpBuffer
+PUB GetXMLAttribs (DestAttribs,len,ptrXML,strAttrib,startIdx):found | i
 {{
-Exemple
-xmbuffer = "<test> <low data="8"> </test>"
-ParseXml_Temp (xmlbuffer,"low data=",@t)
-output : t:=8 (decimal) and index of field
-}}
-
-  ' init
-  k := STR.strpos(xmlTmpBuffer,strField,0)              ' index of field
-  tmpBuffer := STR.StrStr(xmlTmpBuffer,strField,0)      ' cut the beginning of the string
-
-  ' search for field
-  i := STR.strpos(tmpBuffer,string(34),0)
-  j := STR.strpos(tmpBuffer,string(34),i+1)
-
-  bytefill(@txtBuffer,0,gWeather#MAX_Str_LENGTH)
-  STR.strcopy(@txtBuffer,strBuffer,i+1, j-i-1)
-
-  index := 0
-  repeat while index + i + 1 < j
-    TBuffer[index] := byte[tmpBuffer][index+i+1]
-    index++
-  TBuffer[index]:=0
-  
-  ' return the temperature 
-  byte[Tmprtr] := PSR.asc2val(@TBuffer)           
-  return j+k                                      ' used to position for the next field    
-
-Pub ParseXml_strTxt (strAddr,strField,pNxtIdx) | i,j,k,strBuffer
-{{
-Return a string
+Return a list of attributes from xml beginning at 'start'
 PARAM:
-  - xmlTmpBuffer                buffer xml to look into
-  - strField                    field to look at
-  - pNxtIdx                     index  to be used  for the next query 
+  output:
+  - DestAttribs                return list of attributes
+  - return                     0 = found,  -1 = not found
+
+  input:
+  - len                        Lenght of the attributes
+  - ptrXML                     xml string to look into
+  - strAttrib                  field to look for
+  - startIdx                    start address
+
+
 Exemple
-    xmbuffer = "<test> <low data="8"> </test>"
-    Texte:= ParseXml_Temp (xmlbuffer,"low data=",@i)
-  output : Texte = "8"
-  i = 20
+    LenDayStr = 4
+    byte Days[3*LenDayStr]   ' 3 days
+    xmbuffer = "<test> <Day data="Auj"> <Day data="Tom"></test>"
+    GetXMLAttribs (@Days,3,@xmltxt,string("day_of_week data="))
+
+    output : Days  = "Auj\0Tom\0"
+             result = 0
+
 }}
 
-  'PC.str(string(CR,LF,"tmpxml= "))
-  'PC.str(xmlTmpBuffer)
+  if (ParseXml_Str(ptrXML,strAttrib,startIdx)==true)
+    repeat i from 0 to NBVALUE-1
+        STR.strcopy(DestAttribs+i*len,@Values_Array[i*LENSTRING],0, len)   ' 2 possibilities of addressing
+    return true
+  else
+    return false
 
-  k:=  STR.strpos(strAddr,strField,0)
-  
-  strBuffer:=STR.StrStr(strAddr,strField,0)
+Pub ParseXml_Str (strAddr,strField,startIdx):found | i,j,k,strBuffer
 
-  PC.str(string(CR,LF,"tmpBuf = "))
-  PC.str(strBuffer)
-   
-  PC.str(string(CR,LF,"field = "))
-  PC.str(strField)
+{{
+Return a string array containing all the values beginning at 'start'
+All the values are saved into the global array : Values_Array
 
-  i := STR.strpos(strBuffer,string(34),0)
-  j := STR.strpos(strBuffer,string(34),i+1)
+PARAM:
+  - strAddr                     xml string to look into
+  - strField                    field to look for
+  - startIdx                    start address
+  - found                       0 = found,  -1 = not found
 
-  bytefill(@txtBuffer,0,gWeather#MAX_Str_LENGTH)
-  STR.strcopy(@txtBuffer,strBuffer,i+1, j-i-1)
+Extraction is limited to NBVALUE
 
-  
-  byte[pNxtIdx] := j+k
+Exemple
 
-  return txtBuffer
+    xmbuffer = "<test> <Day data="Auj"> <Day data="Tom"></test>"
+    result := ParseXml_Temp (xmlbuffer,"Day data=",1)
 
-   
+    output : TokenAdr  = [pointer to "Day" , pointer to "Tom"]
+             result = 0
+
+}}
+
+  i := 0                                        ' index of first quote : <field="value"/>
+  j := 0                                        ' index of last  quote
+
+  strBuffer := STR.StrStr(strAddr,strField,startIdx) ' cut the string until field (some field could have been in the header)
+                                                ' we removed the header
+                                                ' return false if not found
+  k := 0
+
+  repeat while (k < NBVALUE) 'or (strBuffer <> FALSE)
+ ' repeat while (k<3)
+    i := STR.strpos(strBuffer,string(34),0)+1   ' find letter inside 1rst quote : "->A<-uj"
+    j := STR.strpos(strBuffer,string(34),i)-1   ' find last letter : "Au->j<-"
+
+    STR.strcopy(@Values_Array[k*LENSTRING],strBuffer,i, j-i+1)
+
+    ' prepare next loop
+    strBuffer := STR.StrStr(strBuffer,strField,j)   ' cut the string until field
+    k++
+    ' repeat end
+
+
+  ' End of function =>  result
+  if (strBuffer==false) and  (k==NBVALUE)
+    found := false                                   ' No field inside xml
+  else
+    found := true
+
+
+Dat
+
+  xmltxt      byte  "<xml_api_reply version=",34,"1",34,">"
+              byte  "  <weather module_id=",34,"0",34," tab_id=",34,"0",34,">"
+              byte  "      <forecast_information>"
+              byte  "         <!-- Some inner tags containing data about the city found, time and unit-stuff -->"
+              byte  "         <city data=",34,"Paris, FR",34,"/>"
+              byte  "         <postal_code data=",34,34,"/>"
+              byte  "         <latitude_e6 data=",34,34,"/>"
+              byte  "         <longitude_e6 data=",34,34,"/>"
+              byte  "         <forecast_date data=",34,"2016-04-11",34,"/>"
+              byte  "         <current_date_time data=",34,"2016-04-11 11:11:37 +0200",34,"/>"
+              byte  "         <unit_system data=",34,"fr",34,"/>"
+              byte  "      </forecast_information>"
+              byte  "      <current_conditions>"
+              byte  "         <!-- Some inner tags containing data of current weather -->"
+              byte  "         <condition data=",34,"Risque de Pluie",34,"/>"
+              byte  "         <temp_f data=",34,"52",34,"/>"
+              byte  "         <temp_c data=",34,"11",34,"/>"
+              byte  "         <humidity data=",34,"Humidit�: 88%",34,"/>"
+              byte  "         <icon data=",34,"/images/weather/chance_of_rain.gif",34,"/>"
+              byte  "         <wind_condition data=",34,"Vent: SE de 7 km/h",34,"/>"
+              byte  "      </current_conditions>"
+              byte  "      <forecast_conditions>"
+              byte  "         <!-- Some inner tags containing data about future weather -->"
+              byte  "         <day_of_week data=",34,"Auj",34,"/>"
+              byte  "         <low data=",34,"38",34,"/>"
+              byte  "         <high data=",34,"14",34,"/>"
+              byte  "         <icon data=",34,"/images/weather/rain.gif",34,"/>"
+              byte  "         <condition data=",34,"Pluie  auj Fine",34,"/>"
+              byte  "      </forecast_conditions>"
+              byte  "      <forecast_conditions>"
+              byte  "         <!-- Some inner tags containing data about future weather -->"
+              byte  "         <day_of_week data=",34,"Mar",34,"/>"
+              byte  "         <low data=",34,"6",34,"/>"
+              byte  "         <high data=",34,"14",34,"/>"
+              byte  "         <icon data=",34,"/images/weather/mist.gif",34,"/>"
+              byte  "         <condition data=",34,"Pluie  mar Fine",34,"/>"
+              byte  "      </forecast_conditions>"
+              byte  "      <forecast_conditions>"
+              byte  "         <!-- Some inner tags containing data about future weather -->"
+              byte  "         <day_of_week data=",34,"Mer",34,"/>"
+              byte  "         <low data=",34,"8",34,"/>"
+              byte  "         <high data=",34,"16",34,"/>"
+              byte  "         <icon data=",34,"/images/weather/mist.gif",34,"/>"
+              byte  "         <condition data=",34,"Pluie  mer Fine",34,"/>"
+              byte  "      </forecast_conditions>"
+              byte  "      <forecast_conditions>"
+              byte  "         <!-- Some inner tags containing data about future weather -->"
+              byte  "         <day_of_week data=",34,"Jeu",34,"/>"
+              byte  "         <low data=",34,"7",34,"/>"
+              byte  "         <high data=",34,"14",34,"/>"
+              byte  "         <icon data=",34,"/images/weather/rain.gif",34,"/>"
+              byte  "         <condition data=",34,"Pluie jeu ",34,"/>"
+              byte  "      </forecast_conditions>"
+              byte  "    </weather>"
+              byte  "</xml_api_reply>",0
+
+
+{{
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                   TERMS OF USE: MIT License                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation    │
+│files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,    │
+│modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software│
+│is furnished to do so, subject to the following conditions:                                                                   │
+│                                                                                                                              │
+│The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.│
+│                                                                                                                              │
+│THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE          │
+│WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR         │
+│COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,   │
+│ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                         │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+}}

@@ -5,7 +5,7 @@ CON
 
   CR              = 13
   LF              = 10
-  
+
 OBJ
 
   PC            : "Parallax Serial Terminal Extended"
@@ -15,38 +15,38 @@ PUB Main
 
   PC.Start(115_200)                           ' Start Parallax Serial Terminal
   PC.clear
-  
+
   waitcnt(clkfreq *2 + cnt)      ' attente pour appui sur enable a enlever au finish
 
 
-  InsertWeather (0,string ("Auj"),10, 32, string("Condition bonne"),string("Wind.gif"))
+  InsertWeather (0,string ("Auj"),10, 32, string("Conditions bonnes"),string("Wind.gif"))
 
 
   printWeather (0)
-  
+
 PUB InsertWeather( pIndex, pDay, pTmin, pTmax, pStrConditionPtr, pStrIconPtr )
 {{
-DESCRIPTION: Inserts the sent record into the object storage array.   
+DESCRIPTION: Inserts the sent record into the object storage array.
 PARMS:       pIndex               - index of record to use.
-             pTmin                - Tempr Min 
-             pTmax                 
+             pTmin                - Tempr Min
+             pTmax
              pHeight              - height in inches of person.
              pStrConditionPtr     - pointer to Condition weather string
-             pStrIconPtr          - pointer to Icon string           
-RETURNS: nothing. 
+             pStrIconPtr          - pointer to Icon string
+RETURNS: nothing.
 }}
 
   gWeather[ pIndex ].Day_( pDay )
   gWeather[ pIndex ].Tmin_( pTmin )
   gWeather[ pIndex ].Tmax_( pTmax )
-  gWeather[ pIndex ].Condition_( pStrConditionPtr )  
+  gWeather[ pIndex ].Condition_( pStrConditionPtr )
   gWeather[ pIndex ].Icon_( pStrIconPtr )
-  
+
 PUB PrintWeather( pIndex )
 {{
-DESCRIPTION: Prints the requested record to terminal.  
-PARMS: pIndex - index of record to pretty print to screen. 
-RETURNS: nothing. 
+DESCRIPTION: Prints the requested record to terminal.
+PARMS: pIndex - index of record to pretty print to screen.
+RETURNS: nothing.
 }}
 
 

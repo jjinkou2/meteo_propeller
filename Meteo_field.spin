@@ -1,29 +1,45 @@
+{{
+Example of use :
+in parent OBJ:
+PUB Main
+
+  PC.Start(115_200)                           ' Start Parallax Serial Terminal
+  PC.clear
+
+  waitcnt(clkfreq *2 + cnt)      ' attente pour appui sur enable a enlever au finish
+
+
+  InsertWeather (0,string ("Auj"),10, 32, string("Conditions bonnes"),string("Wind.gif"))
+
+  printWeather (0)
+}}
+
 CON
 ' -----------------------------------------------------------------------------
-' CONSTANTS, DEFINES, MACROS, ETC.   
+' CONSTANTS, DEFINES, MACROS, ETC.
 ' -----------------------------------------------------------------------------
 
   ' string processing constants
   MAX_Str_LENGTH  = 100 ' max length of a condition' text, 99 plus a NULL
-  
+
 VAR
-  byte Day[4]                   '    
+  byte Day[4]                   '
   byte Tmin                  ' temperature Min
   byte Tmax                  ' temperature Max
   byte Condition[MAX_Str_LENGTH]
   byte Icon[MAX_Str_LENGTH]
-   
+
 
 
 CON
 ' -----------------------------------------------------------------------------
-' GETTER METHODS FIRST, convention will be to prefix "read" methods with "_"   
+' GETTER METHODS FIRST, convention will be to prefix "read" methods with "_"
 ' -----------------------------------------------------------------------------
 PUB _Day
-  return  (@Day) 
+  return  (@Day)
 
 PUB _Tmin
-  return  Tmin 
+  return  Tmin
 
 PUB _Tmax
   return  Tmax
@@ -36,7 +52,7 @@ PUB _Icon
 
 CON
 ' -----------------------------------------------------------------------------
-' SETTER METHODS NEXT, convention will be to suffix "write" methods with "_"   
+' SETTER METHODS NEXT, convention will be to suffix "write" methods with "_"
 ' -----------------------------------------------------------------------------
 
 PUB Day_( pStrPtr )
@@ -47,18 +63,18 @@ PUB Day_( pStrPtr )
 
 PUB Tmin_( pTmin )
   Tmin := pTmin
-  
+
 PUB Tmax_( pTmax )
   Tmax := pTmax
-  
+
 PUB Condition_( pStrPtr )
 
   if   strsize( pStrPtr ) + 1 <  MAX_Str_LENGTH
     bytemove( @Condition, pStrPtr, strsize( pStrPtr ) + 1)
   else
     bytemove( @Condition, pStrPtr, MAX_Str_LENGTH)
-  
-  
+
+
 
 PUB Icon_( pStrPtr )
   if   strsize( pStrPtr ) + 1 <  MAX_Str_LENGTH
